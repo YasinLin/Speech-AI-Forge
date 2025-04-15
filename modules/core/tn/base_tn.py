@@ -1,6 +1,7 @@
 import html
 import os
 import re
+import sys
 
 import emojiswitch
 import ftfy
@@ -176,10 +177,20 @@ def insert_spaces_between_uppercase(text: str, guess_lang: GuessLang):
         " ",
         text,
     )
-
-
+def get_base_path():
+    """获取应用程序的基础路径，兼容开发模式和PyInstaller打包模式"""
+    if getattr(sys, 'frozen', False):
+        # 打包环境
+        if hasattr(sys, '_MEIPASS'):
+            # --onefile模式下的临时解压目录（资源文件在这里）
+            return sys._MEIPASS
+        else:
+            # --onedir模式下的可执行文件所在目录
+            return sys.executable
+    return '.'
+print(os.path.join(get_base_path(),"modules/repos_static/ChatTTS/ChatTTS/res/homophones_map.json"))
 homo_replacer = HomophonesReplacer(
-    map_file_path="./modules/repos_static/ChatTTS/ChatTTS/res/homophones_map.json"
+    map_file_path= os.path.join(get_base_path(),"modules/repos_static/ChatTTS/ChatTTS/res/homophones_map.json")
 )
 
 

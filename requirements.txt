@@ -55,11 +55,11 @@ accelerate==1.6.0
 ### cosyvoice
 hyperpyyaml==1.2.2
 openai-whisper==20231117
-onnxruntime==1.18.1
+onnxruntime-gpu==1.19.0
 inflect==7.3.1
 unidecode==1.3.8
 # NOTE: 这个似乎不需要
-# matcha-tts
+matcha-tts
 
 # whisper
 faster_whisper==1.0.3
@@ -92,7 +92,13 @@ moviepy==1.0.3
 modelscope==1.20.0
 
 ### PyTorch Dependencies (using custom source for CUDA)
---extra-index-url https://download.pytorch.org/whl/cu121
-torch==2.3.1+cu121
-torchvision==0.18.1+cu121
-torchaudio==2.3.1+cu121
+--extra-index-url https://download.pytorch.org/whl/cu126
+#torch==2.6.0+cu126
+#torchvision==0.21.0+cu126
+#torchaudio==2.6.0+cu126
+torch
+torchvision
+torchaudio
+tensorrt-cu12==10.0.1
+tensorrt-cu12-bindings==10.0.1
+tensorrt-cu12-libs==10.0.1

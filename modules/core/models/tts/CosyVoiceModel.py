@@ -1,3 +1,5 @@
+import time
+
 if __name__ == "__main__":
     from modules.repos_static.sys_paths import setup_repos_paths
 
@@ -8,6 +10,7 @@ import threading
 from functools import partial
 from pathlib import Path
 from typing import Generator, Optional
+from modules import config
 
 import librosa
 import numpy as np
@@ -77,6 +80,9 @@ class CosyVoiceTTSModel(TTSModel):
         }
 
         self.sample_rate = 24000
+        self.fp16 = not config.runtime_env_vars.no_half
+        self.load_jit = True
+        self.load_trt = True
 
     def is_downloaded(self) -> bool:
         return self.model_dir.exists()
@@ -120,18 +126,31 @@ class CosyVoiceTTSModel(TTSModel):
 
             # NOTE: 好像 voice 采样率和这个采样率不一样？
             self.sample_rate = configs["sample_rate"]
+            use_flow_cache=True
 
             model = CosyVoice2Model(
                 llm=configs["llm"],
                 flow=configs["flow"],
                 hift=configs["hift"],
+                fp16=self.fp16,
+                use_flow_cache=use_flow_cache
             )
             model.device = device
+            if torch.cuda.is_available() is False and (self.load_jit is True or self.load_trt is True or self.fp16 is True):
+                self.load_jit, self.load_trt, self.fp16 = False, False, False
+                logging.warning('no cuda device, set load_jit/load_trt/fp16 to False')
             model.load(
                 llm_model=model_dir / "llm.pt",
-                flow_model=model_dir / "flow.pt",
-                hift_model=model_dir / "hift.pt",
+                flow_model=model_dir / ('flow.pt' if use_flow_cache is False else 'flow.cache.pt'),
+                hift_model=model_dir / "hift.pt"
             )
+            if self.load_jit:
+                model.load_jit(model_dir / 'flow.encoder.{}.zip'.format('fp16' if self.fp16 is True else 'fp32'))
+            if self.load_trt:
+                model.load_trt(model_dir / 'flow.decoder.estimator.{}.mygpu.plan'.format('fp16' if self.fp16 is True else 'fp32'),
+                                    model_dir / 'flow.decoder.estimator.fp32.onnx',
+                                    self.fp16)
+                
             model.llm.to(device=device, dtype=dtype)
             model.flow.to(device=device, dtype=dtype)
             model.hift.to(device=device, dtype=dtype)
@@ -190,10 +209,13 @@ class CosyVoiceTTSModel(TTSModel):
     ):
         tts_speeches = []
         for text in tts_texts:
+            start_time = time.time()
             model_input = self.frontend.frontend_zero_shot(
                 text, prompt_text, prompt_speech_16k, resample_rate=self.sample_rate
             )
             for model_output in self.model.tts(**model_input):
+                speech_len = model_output['tts_speech'].shape[1] / self.sample_rate
+                logging.info('yield speech len {}, rtf {}'.format(speech_len, (time.time() - start_time) / speech_len))
                 tts_speeches.append(model_output["tts_speech"])
         return {"tts_speech": torch.concat(tts_speeches, dim=1)}
 
@@ -206,11 +228,14 @@ class CosyVoiceTTSModel(TTSModel):
             )
         tts_speeches = []
         for text in tts_texts:
+            start_time = time.time()
             model_input = self.frontend.frontend_cross_lingual(
                 text, prompt_speech_16k, resample_rate=self.sample_rate
             )
             for model_output in self.model.tts(**model_input):
                 tts_speeches.append(model_output["tts_speech"])
+                speech_len = model_output['tts_speech'].shape[1] / self.sample_rate
+                logging.info('yield speech len {}, rtf {}'.format(speech_len, (time.time() - start_time) / speech_len))
         return {"tts_speech": torch.concat(tts_speeches, dim=1)}
 
     def inference_instruct(
@@ -228,8 +253,11 @@ class CosyVoiceTTSModel(TTSModel):
                 prompt_speech_16k=prompt_speech_16k,
                 resample_rate=self.sample_rate,
             )
+            start_time = time.time()
             for model_output in self.model.tts(**model_input):
                 tts_speeches.append(model_output["tts_speech"])
+                speech_len = model_output['tts_speech'].shape[1] / self.sample_rate
+                logging.info('yield speech len {}, rtf {}'.format(speech_len, (time.time() - start_time) / speech_len))
         return {"tts_speech": torch.concat(tts_speeches, dim=1)}
 
     def spk_to_embedding(self, spk: TTSSpeaker):

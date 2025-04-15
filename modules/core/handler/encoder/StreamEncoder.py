@@ -12,6 +12,7 @@ import pydub.utils
 import logging
 
 logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
 
 
 def wave_header_chunk(frame_input=b"", channels=1, sample_width=2, sample_rate=24000):
@@ -56,41 +57,36 @@ class StreamEncoder:
         )
 
     def open(
-        self, format: str = "mp3", acodec: str = "libmp3lame", bitrate: str = "320k"
+        self, format: str = "mp3", acodec: str = "libmp3lame", bitrate: str = "320k", preset: str = 'ultrafast'
     ):
         encoder = self.encoder
-        self.p = subprocess.Popen(
-            [
+        args = [
                 encoder,
-                "-re",
-                "-threads",
-                str(os.cpu_count() or 4),
-                "-f",
-                "s16le",  # 指定输入格式为 16 位 PCM
-                "-ar",
-                str(self.sample_rate),  # 输入采样率
-                "-ac",
-                "1",  # 输入单声道
-                "-i",
-                "pipe:0",
-                "-f",
-                format,
-                "-acodec",
-                acodec,
-                "-b:a",
-                bitrate,
-                "-flush_packets",
-                "1",
-                "-max_delay",
-                "0",
+                # "-re",
+                "-threads", str(os.cpu_count() or 4),
+                "-f", "s16le",  # 指定输入格式为 16 位 PCM
+                "-ar", str(self.sample_rate),  # 输入采样率
+                "-ac", "1",  # 输入单声道
+                "-i", "pipe:0",
+                "-f", format,
+                "-acodec",  acodec,
+                "-b:a",  bitrate,
+                # 关键优化参数 ----------------------------
+                "-preset", preset,  # 使用更快的编码预设（如 fast, veryfast）
+                "-max_delay", "0",
+                "-flush_packets", "1",
+                # -----------------------------------------
                 "-",
-            ],
+            ]
+        self.p = subprocess.Popen(
+            args,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             # NOTE: 这里设置为0可以低延迟解码，但是容易阻塞影响ffmpeg效率，所以最好还是设置上，因为编码相较于生成其实多不了多少时间
             bufsize=65536,
         )
+        print(" ".join(args))
         self.read_thread = threading.Thread(target=self._read_output)
         self.read_thread.daemon = True
         self.read_thread.start()
