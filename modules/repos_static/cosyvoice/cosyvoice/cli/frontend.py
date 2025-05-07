@@ -51,6 +51,7 @@ class CosyVoiceFrontEnd:
         option.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_ALL
         option.intra_op_num_threads = 1
         self.campplus_session = onnxruntime.InferenceSession(campplus_model, sess_options=option, providers=["CPUExecutionProvider"])
+        print(speech_tokenizer_model)
         self.speech_tokenizer_session = onnxruntime.InferenceSession(speech_tokenizer_model, sess_options=option,
                                                                      providers=["CUDAExecutionProvider" if torch.cuda.is_available() else
                                                                                 "CPUExecutionProvider"])

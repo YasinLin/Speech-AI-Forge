@@ -77,8 +77,8 @@ def setup_api_args(parser: argparse.ArgumentParser):
 
 def process_api_args(args: argparse.Namespace, app: FastAPI):
     cors_origin = env.get_and_update_env(args, "cors_origin", "*", str)
-    no_playground = env.get_and_update_env(args, "no_playground", False, bool)
-    no_docs = env.get_and_update_env(args, "no_docs", False, bool)
+    no_playground = env.get_and_update_env(args, "no_playground", True, bool)
+    no_docs = env.get_and_update_env(args, "no_docs", True, bool)
     exclude = env.get_and_update_env(args, "exclude", "", str)
 
     api = create_api(app=app, exclude=exclude.split(","))

@@ -4,6 +4,7 @@ import sys
 
 from modules.ffmpeg_env import setup_ffmpeg_path
 from modules.repos_static.sys_paths import setup_repos_paths
+from modules.third_party_path import setup_third_party_paths
 from modules.webui import webui_config
 
 try:
@@ -13,6 +14,7 @@ try:
 
     setup_repos_paths()
     setup_ffmpeg_path()
+    setup_third_party_paths()
     # NOTE: 因为 logger 都是在模块中初始化，所以这个 config 必须在最前面
     logging.basicConfig(
         level=os.getenv("LOG_LEVEL", "INFO"),

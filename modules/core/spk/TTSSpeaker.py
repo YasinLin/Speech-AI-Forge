@@ -2,8 +2,10 @@ import base64
 import copy
 import dataclasses
 import json
+import struct
 import uuid
 import inspect
+import io
 from typing import Any, Callable, Optional, Union
 
 import numpy as np
@@ -30,6 +32,9 @@ dclses = [
     DcSpkReference,
 ]
 
+def parse_wav_dtype(wav_bytes):
+    dtype, _ = audio_utils.get_wav_dtype(wav_bytes)
+    return str(np.dtype(dtype).name)
 
 def dcls_asdict(obj: Any) -> dict:
     ret = dict()
@@ -138,17 +143,17 @@ class TTSSpeaker:
     @staticmethod
     def from_ref_wav(ref_wav: tuple[int, np.ndarray], text="") -> "TTSSpeaker":
         sr, data = ref_wav
-        assert data.dtype == np.int16, f"ref wav must be int16, but got {data.dtype}"
-
         spk = TTSSpeaker.empty()
-        spk.add_ref(ref=DcSpkReference(text=text, wav=data.tobytes(), wav_sr=sr))
+        spk.add_ref(ref=DcSpkReference(text=text, wav=data.tobytes(), wav_sr=sr, dtype=data.dtype))
         return spk
 
     @staticmethod
-    def from_ref_wav_bytes(ref_wav: tuple[int, bytes], text="") -> "TTSSpeaker":
+    def from_ref_wav_bytes(ref_wav: tuple[int, bytes], text="", dtype=None) -> "TTSSpeaker":
         sr, data = ref_wav
         spk = TTSSpeaker.empty()
-        spk.add_ref(ref=DcSpkReference(text=text, wav=data, wav_sr=sr))
+        if dtype is None:
+            dtype = parse_wav_dtype(data)
+        spk.add_ref(ref=DcSpkReference(text=text, wav=data, wav_sr=sr, dtype=dtype))
         return spk
 
     def __init__(self, data: DcSpk) -> None:
@@ -197,6 +202,8 @@ class TTSSpeaker:
             return None
         ref0 = self._data.refs[0]
         if len(self._data.refs) == 1 or get_func is None:
+            if(not ref0.dtype and ref0.wav):
+               ref0.dtype = parse_wav_dtype(ref0.wav)
             return ref0
 
         found_ref = None
@@ -205,7 +212,12 @@ class TTSSpeaker:
                 found_ref = ref
                 break
         if found_ref is not None:
+            if(not found_ref.dtype) and found_ref.wav:
+               found_ref.dtype = parse_wav_dtype(found_ref.wav)
             return found_ref
+
+        if(not ref0.dtype and ref0.wav):
+            ref0.dtype = parse_wav_dtype(ref0.wav)
         return ref0
 
     def get_ref_wav(
@@ -216,9 +228,10 @@ class TTSSpeaker:
             return None, None, None
         sr = ref0.wav_sr
         wav_bytes = ref0.wav
-        wav = audio_utils.bytes_to_librosa_array(audio_bytes=wav_bytes, sample_rate=sr)
+        dtype = ref0.dtype
+        wav = audio_utils.bytes_to_librosa_array(audio_bytes=wav_bytes, sample_rate=sr,dtype=dtype)
         text = ref0.text
-        return sr, wav, text
+        return sr, wav, text, dtype
 
     def get_recommend_config(self) -> Optional[DcSpkInferConfig]:
         if self._data.recommend_config:

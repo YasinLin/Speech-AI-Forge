@@ -28,7 +28,7 @@ mistune==3.0.2
 gradio==4.44.0
 gradio_client==1.3.0
 ## NOTE: pydantic 不要升到 2.11 会报错！
-pydantic==2.8.2 
+pydantic==2.8.2
 pydantic-core==2.20.1
 
 # audio_denoiser
@@ -59,7 +59,7 @@ onnxruntime==1.18.1
 inflect==7.3.1
 unidecode==1.3.8
 # NOTE: 这个似乎不需要
-# matcha-tts
+#matcha-tts
 
 # whisper
 faster_whisper==1.0.3
@@ -92,7 +92,10 @@ moviepy==1.0.3
 modelscope==1.20.0
 
 ### PyTorch Dependencies (using custom source for CUDA)
---extra-index-url https://download.pytorch.org/whl/cu121
-torch==2.3.1+cu121
-torchvision==0.18.1+cu121
-torchaudio==2.3.1+cu121
+--extra-index-url https://download.pytorch.org/whl/cu126
+#torch==2.6.0+cu126
+#torchvision==0.21.0+cu126
+#torchaudio==2.6.0+cu126
+torch
+torchvision
+torchaudio

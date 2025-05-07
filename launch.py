@@ -3,8 +3,22 @@ import os
 
 from modules.ffmpeg_env import setup_ffmpeg_path
 from modules.repos_static.sys_paths import setup_repos_paths
+from modules.third_party_path import setup_third_party_paths
+
+import torch
+
+print(torch.cuda.is_available())
+
+def script_method(fn, _rcb=None):
+    return fn
+def script(obj, optimize=True, _frames_up=0, _rcb=None):
+    return obj
+import torch.jit
+torch.jit.script_method = script_method
+torch.jit.script = script
 
 try:
+    setup_third_party_paths()
     setup_repos_paths()
     setup_ffmpeg_path()
     # NOTE: 因为 logger 都是在模块中初始化，所以这个 config 必须在最前面

@@ -54,6 +54,7 @@ class MaskedDiffWithXvec(torch.nn.Module):
         self.encoder = encoder
         self.encoder_proj = torch.nn.Linear(self.encoder.output_size(), output_size)
         self.decoder = decoder
+        self.decoder.estimator.static_chunk_size=0
         self.length_regulator = length_regulator
         self.only_mask_loss = only_mask_loss
 
@@ -109,8 +110,7 @@ class MaskedDiffWithXvec(torch.nn.Module):
                   prompt_token_len,
                   prompt_feat,
                   prompt_feat_len,
-                  embedding,
-                  flow_cache):
+                  embedding):
         assert token.shape[0] == 1
         # xvec projection
         embedding = F.normalize(embedding, dim=1)
@@ -134,18 +134,17 @@ class MaskedDiffWithXvec(torch.nn.Module):
         conds = conds.transpose(1, 2)
 
         mask = (~make_pad_mask(torch.tensor([mel_len1 + mel_len2]))).to(h)
-        feat, flow_cache = self.decoder(
+        feat = self.decoder(
             mu=h.transpose(1, 2).contiguous(),
             mask=mask.unsqueeze(1),
             spks=embedding,
             cond=conds,
             n_timesteps=10,
-            prompt_len=mel_len1,
-            flow_cache=flow_cache
+            # prompt_len=mel_len1,
         )
         feat = feat[:, :, mel_len1:]
         assert feat.shape[2] == mel_len2
-        return feat, flow_cache
+        return feat
 
 
 class CausalMaskedDiffWithXvec(torch.nn.Module):

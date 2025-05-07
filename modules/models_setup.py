@@ -53,8 +53,11 @@ def setup_model_args(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--preload_models",
-        action="store_true",
-        help="Preload all models at startup",
+        nargs="+",
+        help="Preload specified models at startup",
+        default=[],
+        type=str.lower,
+        choices=["chattts", "enhancer", "cosy-voice", "cosy-voice2"],
     )
 
 
@@ -68,7 +71,7 @@ def process_model_args(args: argparse.Namespace):
     no_half = env.get_and_update_env(args, "no_half", False, bool)
     off_tqdm = env.get_and_update_env(args, "off_tqdm", False, bool)
     debug_generate = env.get_and_update_env(args, "debug_generate", False, bool)
-    preload_models = env.get_and_update_env(args, "preload_models", False, bool)
+    preload_models = env.get_and_update_env(args, "preload_models", [], list)
 
     # TODO: 需要等 zoo 模块实现
     # generate_audio.setup_lru_cache()
@@ -84,7 +87,10 @@ def process_model_args(args: argparse.Namespace):
         """
         logger.info("Preload models at startup, load...")
 
-        model_zoo.get_chat_tts().load()
-        model_zoo.get_resemble_enhance().load()
+        for model in preload_models:
+            if model == 'enhancer':
+                model_zoo.get_resemble_enhance().load()
+            else:
+                model_zoo.load_model(model)
 
         logger.info("Preload models at startup, load done")

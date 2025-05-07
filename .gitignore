@@ -51,6 +51,9 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+third_party/
+models/
+ffmpeg/
 
 # Translations
 *.mo

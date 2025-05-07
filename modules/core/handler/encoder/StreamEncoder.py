@@ -88,7 +88,7 @@ class StreamEncoder:
         self.p = subprocess.Popen(
             [
                 encoder,
-                "-re",
+                # "-re",
                 "-threads",
                 str(os.cpu_count() or 4),
                 # NOTE: 指定输入格式为 16 位 PCM

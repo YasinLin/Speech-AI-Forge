@@ -31,6 +31,7 @@ class ModelZoo:
         "chat-tts": ChatTTSModel(),
         "fish-speech": FishSpeech14Model(),
         "cosy-voice": CosyVoiceTTSModel(),
+        "cosy-voice2": CosyVoiceTTSModel("cosy-voice2"),
         "fire-red-tts": FireRedTTSModel(),
         "f5-tts": F5TtsModel(),
         # === enhancer ===
@@ -121,6 +122,9 @@ class ModelZoo:
 
     def get_cosy_voice(self) -> CosyVoiceTTSModel:
         return self.get_model("cosy-voice")
+
+    def get_cosy_voice2(self) -> CosyVoiceTTSModel:
+        return self.get_model("cosy-voice2")
 
     def get_fish_speech(self) -> FishSpeech14Model:
         return self.get_model("fish-speech")

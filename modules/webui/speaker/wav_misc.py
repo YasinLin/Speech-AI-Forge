@@ -1,8 +1,8 @@
 import io
+import struct
 
 import numpy as np
 from scipy.io import wavfile
-
 
 def encode_to_wav(audio_tuple: tuple[int, np.ndarray]):
     if not isinstance(audio_tuple, tuple) or len(audio_tuple) != 2:

@@ -43,6 +43,7 @@ class DcSpkSample:
     wav: bytes
     text: str
     wav_sr: int
+    dtype: Optional[str] = None
 
 
 @dataclass(repr=False, eq=False)
@@ -51,6 +52,7 @@ class DcSpkReference:
 
     wav: Optional[bytes] = None
     wav_sr: Optional[int] = None
+    dtype: Optional[str] = None
 
     # 标注情绪
     emotion: Optional[str] = None

@@ -1,4 +1,5 @@
 import io
+import struct
 import sys
 from io import BytesIO
 
@@ -12,7 +13,7 @@ from pydub import AudioSegment, effects
 INT16_MAX = np.iinfo(np.int16).max
 
 
-def bytes_to_librosa_array(audio_bytes: bytes, sample_rate: int) -> npt.NDArray:
+def bytes_to_librosa_array(audio_bytes: bytes, sample_rate: int, dtype:str = "int16") -> npt.NDArray:
     """
     Converts bytes to librosa array.
 
@@ -25,7 +26,7 @@ def bytes_to_librosa_array(audio_bytes: bytes, sample_rate: int) -> npt.NDArray:
     Returns:
         librosa array
     """
-    audio_np = np.frombuffer(audio_bytes, dtype=np.int16)
+    audio_np = np.frombuffer(audio_bytes, dtype=np.dtype(dtype))
     byte_io = io.BytesIO()
     wavfile.write(byte_io, sample_rate, audio_np)
     byte_io.seek(0)
@@ -57,6 +58,57 @@ def audio_to_int16(audio_data: np.ndarray) -> np.ndarray:
         audio_data = (audio_data * INT16_MAX).astype(np.int16)
     return audio_data
 
+
+def get_wav_dtype(wav_bytes):
+    """
+    从 WAV 文件的字节数据中解析出 numpy dtype
+    :param wav_bytes: WAV 文件的字节数据
+    :return: numpy dtype 和声道数
+    """
+    # 检查是否是有效的 WAV 文件
+    if wav_bytes[0:4] != b'RIFF' or wav_bytes[8:12] != b'WAVE':
+        raise ValueError("不是有效的 WAV 文件")
+
+    # 查找 'fmt ' 块
+    fmt_chunk_pos = 12
+    while fmt_chunk_pos + 8 < len(wav_bytes):
+        chunk_id = wav_bytes[fmt_chunk_pos:fmt_chunk_pos+4]
+        chunk_size = struct.unpack('<I', wav_bytes[fmt_chunk_pos+4:fmt_chunk_pos+8])[0]
+
+        if chunk_id == b'fmt ':
+            break
+        fmt_chunk_pos += 8 + chunk_size
+    else:
+        raise ValueError("找不到 'fmt ' 块")
+
+    # 解析格式信息
+    audio_format = struct.unpack('<H', wav_bytes[fmt_chunk_pos+8:fmt_chunk_pos+10])[0]
+    num_channels = struct.unpack('<H', wav_bytes[fmt_chunk_pos+10:fmt_chunk_pos+12])[0]
+    bits_per_sample = struct.unpack('<H', wav_bytes[fmt_chunk_pos+22:fmt_chunk_pos+24])[0]
+
+    # 确定 dtype
+    if audio_format == 1:  # PCM
+        if bits_per_sample == 8:
+            dtype = np.uint8  # 无符号8位
+        elif bits_per_sample == 16:
+            dtype = np.int16  # 有符号16位
+        elif bits_per_sample == 24:
+            dtype = np.int32  # 通常24位数据存储在32位中
+        elif bits_per_sample == 32:
+            dtype = np.int32  # 有符号32位
+        else:
+            raise ValueError(f"不支持的位深度: {bits_per_sample}")
+    elif audio_format == 3:  # IEEE float
+        if bits_per_sample == 32:
+            dtype = np.float32
+        elif bits_per_sample == 64:
+            dtype = np.float64
+        else:
+            raise ValueError(f"不支持的浮点位深度: {bits_per_sample}")
+    else:
+        raise ValueError(f"不支持的音频格式: {audio_format}")
+
+    return dtype, num_channels
 
 def pydub_to_np(audio: AudioSegment) -> tuple[int, np.ndarray]:
     """

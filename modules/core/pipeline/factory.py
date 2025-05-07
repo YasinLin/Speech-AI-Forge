@@ -117,6 +117,8 @@ class PipelineFactory:
             return cls.create_fishspeech_pipeline(ctx)
         elif model_id == "cosyvoice" or model_id == "cosy-voice":
             return cls.create_cosyvoice_pipeline(ctx)
+        elif model_id == "cosyvoice2" or model_id == "cosy-voice2":
+            return cls.create_cosyvoice2_pipeline(ctx)
         elif model_id == "firered" or model_id == "fire-red-tts":
             return cls.create_fire_red_tts_pipeline(ctx)
         elif model_id == "f5" or model_id == "f5-tts":
@@ -166,6 +168,17 @@ class PipelineFactory:
         cls.setup_base_modules(pipeline=pipeline)
         pipeline.add_module(TNProcess(tn_pipeline=CosyVoiceTN))
         model = model_zoo.get_cosy_voice()
+        pipeline.set_model(model)
+
+        pipeline.audio_sr = model.get_sample_rate()
+        return pipeline
+
+    @classmethod
+    def create_cosyvoice2_pipeline(cls, ctx: TTSPipelineContext):
+        pipeline = TTSPipeline(ctx)
+        cls.setup_base_modules(pipeline=pipeline)
+        pipeline.add_module(TNProcess(tn_pipeline=CosyVoiceTN))
+        model = model_zoo.get_cosy_voice2()
         pipeline.set_model(model)
 
         pipeline.audio_sr = model.get_sample_rate()

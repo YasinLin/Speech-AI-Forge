@@ -70,6 +70,7 @@ class TextNormalizeRequest(BaseModel):
 pipelines = {
     "chat-tts": ChatTtsTN,
     "cosy-voice": CosyVoiceTN,
+    "cosy-voice2": CosyVoiceTN,
     "fish-speech": FishSpeechTN,
 }
 

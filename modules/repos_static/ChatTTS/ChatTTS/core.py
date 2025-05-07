@@ -24,6 +24,8 @@ from .utils import (
 from .utils import logger as utils_logger
 from .utils import select_device
 
+fileLike = torch.serialization.FILE_LIKE if hasattr(torch.serialization, "FILE_LIKE") else torch.serialization.FileLike
+
 
 class Chat:
     def __init__(self, logger=logging.getLogger(__name__)):
@@ -63,7 +65,7 @@ class Chat:
         self,
         source: Literal["huggingface", "local", "custom"] = "local",
         force_redownload=False,
-        custom_path: Optional[torch.serialization.FILE_LIKE] = None,
+        custom_path: Optional[fileLike] = None,
     ) -> Optional[str]:
         if source == "local":
             download_path = os.getcwd()
@@ -121,7 +123,7 @@ class Chat:
         source: Literal["huggingface", "local", "custom"] = "local",
         force_redownload=False,
         compile: bool = False,
-        custom_path: Optional[torch.serialization.FILE_LIKE] = None,
+        custom_path: Optional[fileLike] = None,
         device: Optional[torch.device] = None,
         coef: Optional[torch.Tensor] = None,
         use_flash_attn=False,
