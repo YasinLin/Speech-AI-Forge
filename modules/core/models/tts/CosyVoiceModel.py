@@ -1,3 +1,5 @@
+import time
+
 if __name__ == "__main__":
     from modules.repos_static.sys_paths import setup_repos_paths
 
@@ -9,6 +11,7 @@ import threading
 from functools import partial
 from pathlib import Path
 from typing import Generator, Optional
+from modules import config
 
 import time
 import librosa
@@ -152,6 +155,7 @@ class CosyVoiceTTSModel(TTSModel):
 
             # NOTE: 好像 voice 采样率和这个采样率不一样？
             self.sample_rate = configs["sample_rate"]
+            use_flow_cache=True
 
             args = {
                 "llm": configs["llm"],
@@ -175,8 +179,8 @@ class CosyVoiceTTSModel(TTSModel):
                 logging.warning('cpu do not support jit, force set to False')
             model.load(
                 llm_model=model_dir / "llm.pt",
-                flow_model=model_dir / "flow.pt",
-                hift_model=model_dir / "hift.pt",
+                flow_model=model_dir / ('flow.pt' if use_flow_cache is False else 'flow.cache.pt'),
+                hift_model=model_dir / "hift.pt"
             )
             # model.llm.to(device=device, dtype=dtype)
             # model.flow.to(device=device, dtype=dtype)
@@ -272,11 +276,14 @@ class CosyVoiceTTSModel(TTSModel):
             )
         tts_speeches = []
         for text in tts_texts:
+            start_time = time.time()
             model_input = self.frontend.frontend_cross_lingual(
                 text, prompt_speech_16k, resample_rate=self.sample_rate
             )
             for model_output in self.model.tts(**model_input):
                 tts_speeches.append(model_output["tts_speech"])
+                speech_len = model_output['tts_speech'].shape[1] / self.sample_rate
+                logging.info('yield speech len {}, rtf {}'.format(speech_len, (time.time() - start_time) / speech_len))
         return {"tts_speech": torch.concat(tts_speeches, dim=1)}
 
     def inference_instruct(
@@ -296,6 +303,7 @@ class CosyVoiceTTSModel(TTSModel):
                 prompt_speech_16k=prompt_speech_16k,
                 resample_rate=self.sample_rate,
             )
+            start_time = time.time()
             for model_output in self.model.tts(**model_input):
                 tts_speech = model_output['tts_speech']
                 tts_speeches.append(tts_speech)

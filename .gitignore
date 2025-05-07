@@ -211,3 +211,4 @@ test*.srt
 test*.tsv
 
 .DS_Store
+models/**/*

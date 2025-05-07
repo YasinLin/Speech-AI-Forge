@@ -17,6 +17,18 @@ import torch.jit
 torch.jit.script_method = script_method
 torch.jit.script = script
 
+import torch
+
+print(torch.cuda.is_available())
+
+# def script_method(fn, _rcb=None):
+#     return fn
+# def script(obj, optimize=True, _frames_up=0, _rcb=None):
+#     return obj
+# import torch.jit
+# torch.jit.script_method = script_method
+# torch.jit.script = script
+
 try:
     setup_third_party_paths()
     setup_repos_paths()
