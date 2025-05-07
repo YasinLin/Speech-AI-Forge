@@ -120,7 +120,6 @@ class StreamEncoder:
             # NOTE: 这里设置为0可以低延迟解码，但是容易阻塞影响ffmpeg效率，所以最好还是设置上，因为编码相较于生成其实多不了多少时间
             bufsize=65536,
         )
-        print(" ".join(args))
         self.read_thread = threading.Thread(target=self._read_output)
         self.read_thread.daemon = True
         self.read_thread.start()

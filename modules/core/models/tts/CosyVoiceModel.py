@@ -155,7 +155,9 @@ class CosyVoiceTTSModel(TTSModel):
 
             # NOTE: 好像 voice 采样率和这个采样率不一样？
             self.sample_rate = configs["sample_rate"]
-            use_flow_cache=True
+            use_flow_cache=False
+            if is_v2(self.mid):
+                use_flow_cache=True
 
             args = {
                 "llm": configs["llm"],
